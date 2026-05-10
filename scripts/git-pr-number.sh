@@ -2,7 +2,9 @@
 set -euo pipefail
 
 # Change to the repository root directory
-cd "$(git rev-parse --show-toplevel)"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+export PATH="$REPO_ROOT:$PATH"
 
 # Check if gh command is available
 if ! command -v gh &> /dev/null; then
