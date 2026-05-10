@@ -1,101 +1,101 @@
 name: build-images
-
-on:
+'on':
   workflow_call:
     inputs:
-      # 'skip' is kind of silly. it exists because we can't actually *skip* this job from e2e-test,
-      # otherwise the follow-up job that needs it wouldn't be able to run. So instead we pretend the
-      # job completed successfully, but actually do nothing...
       skip:
-        description: 'Changes this action to perform a no-op'
+        description: Changes this action to perform a no-op
         type: boolean
         required: false
       tag:
-        description: 'Tag to use for the Docker images'
+        description: Tag to use for the Docker images
         type: string
         required: true
       kernel-image:
-        description: 'Kernel image for the VMs embedded in neonvm-runner. If not specified, a kernel will be built from source'
+        description: Kernel image for the VMs embedded in neonvm-runner. If not specified,
+          a kernel will be built from source
         type: string
         required: false
       upload-to-ecr-acr:
-        description: 'Should images be uploaded to neon ECR'
+        description: Should images be uploaded to neon ECR
         type: boolean
         required: false
       archs:
-        description: 'Architectures to build for'
+        description: Architectures to build for
         type: string
         required: false
         default: '["amd64","arm64"]'
-
     outputs:
       controller:
-        description: 'neonvm-controller image'
+        description: neonvm-controller image
         value: ${{ jobs.tags.outputs.controller }}
       vxlan-controller:
-        description: 'neonvm-vxlan-controller image'
+        description: neonvm-vxlan-controller image
         value: ${{ jobs.tags.outputs.vxlan-controller }}
       runner:
-        description: 'neonvm-runner image'
+        description: neonvm-runner image
         value: ${{ jobs.tags.outputs.runner }}
       scheduler:
-        description: 'autoscale-scheduler image'
+        description: autoscale-scheduler image
         value: ${{ jobs.tags.outputs.scheduler }}
       autoscaler-agent:
-        description: 'autoscaler-agent image'
+        description: autoscaler-agent image
         value: ${{ jobs.tags.outputs.autoscaler-agent }}
       daemon:
-        description: 'neonvm-daemon image'
+        description: neonvm-daemon image
         value: ${{ jobs.tags.outputs.daemon }}
       cluster-autoscaler:
-        description: 'cluster-autoscaler image'
+        description: cluster-autoscaler image
         value: ${{ jobs.tags.outputs.cluster-autoscaler }}
-
 env:
-  IMG_CONTROLLER:         "neonvm-controller"
-  IMG_VXLAN_CONTROLLER:   "neonvm-vxlan-controller"
-  IMG_RUNNER:             "neonvm-runner"
-  IMG_SCHEDULER:          "autoscale-scheduler"
-  IMG_AUTOSCALER_AGENT:   "autoscaler-agent"
-  IMG_DAEMON:             "neonvm-daemon"
-  IMG_CLUSTER_AUTOSCALER: "cluster-autoscaler-neonvm"
-  GHCR_REGISTRY:          "ghcr.io/neondatabase"
-
+  IMG_CONTROLLER: neonvm-controller
+  IMG_VXLAN_CONTROLLER: neonvm-vxlan-controller
+  IMG_RUNNER: neonvm-runner
+  IMG_SCHEDULER: autoscale-scheduler
+  IMG_AUTOSCALER_AGENT: autoscaler-agent
+  IMG_DAEMON: neonvm-daemon
+  IMG_CLUSTER_AUTOSCALER: cluster-autoscaler-neonvm
+  GHCR_REGISTRY: ghcr.io/neondatabase
 defaults:
   run:
     shell: bash -euo pipefail {0}
-
 jobs:
-  # note: this tags job must be separate and NOT skipped with inputs.skip, so that way the workflow
-  # itself still succeeds, while not doing anything when called by the release workflow.
   tags:
     outputs:
-      controller:         ${{ steps.show-tags.outputs.controller }}
-      vxlan-controller:   ${{ steps.show-tags.outputs.vxlan-controller }}
-      runner:             ${{ steps.show-tags.outputs.runner }}
-      scheduler:          ${{ steps.show-tags.outputs.scheduler }}
-      autoscaler-agent:   ${{ steps.show-tags.outputs.autoscaler-agent }}
-      daemon:             ${{ steps.show-tags.outputs.daemon }}
+      controller: ${{ steps.show-tags.outputs.controller }}
+      vxlan-controller: ${{ steps.show-tags.outputs.vxlan-controller }}
+      runner: ${{ steps.show-tags.outputs.runner }}
+      scheduler: ${{ steps.show-tags.outputs.scheduler }}
+      autoscaler-agent: ${{ steps.show-tags.outputs.autoscaler-agent }}
+      daemon: ${{ steps.show-tags.outputs.daemon }}
       cluster-autoscaler: ${{ steps.show-tags.outputs.cluster-autoscaler }}
     runs-on: ubuntu-latest
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-        with:
-          egress-policy: audit
+    - name: Harden Runner
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481
+      with:
+        egress-policy: audit
+    - id: show-tags
+      run: 'echo "controller=${GHCR_REGISTRY}/${IMG_CONTROLLER}:${{ inputs.tag }}"
+        | tee -a $GITHUB_OUTPUT
 
-      - id: show-tags
-        run: |
-          echo "controller=${GHCR_REGISTRY}/${IMG_CONTROLLER}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "vxlan-controller=${GHCR_REGISTRY}/${IMG_VXLAN_CONTROLLER}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "runner=${GHCR_REGISTRY}/${IMG_RUNNER}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "scheduler=${GHCR_REGISTRY}/${IMG_SCHEDULER}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "autoscaler-agent=${GHCR_REGISTRY}/${IMG_AUTOSCALER_AGENT}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "daemon=${GHCR_REGISTRY}/${IMG_DAEMON}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "cluster-autoscaler=${GHCR_REGISTRY}/${IMG_CLUSTER_AUTOSCALER}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
+        echo "vxlan-controller=${GHCR_REGISTRY}/${IMG_VXLAN_CONTROLLER}:${{ inputs.tag
+        }}" | tee -a $GITHUB_OUTPUT
 
+        echo "runner=${GHCR_REGISTRY}/${IMG_RUNNER}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
+
+        echo "scheduler=${GHCR_REGISTRY}/${IMG_SCHEDULER}:${{ inputs.tag }}" | tee
+        -a $GITHUB_OUTPUT
+
+        echo "autoscaler-agent=${GHCR_REGISTRY}/${IMG_AUTOSCALER_AGENT}:${{ inputs.tag
+        }}" | tee -a $GITHUB_OUTPUT
+
+        echo "daemon=${GHCR_REGISTRY}/${IMG_DAEMON}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
+
+        echo "cluster-autoscaler=${GHCR_REGISTRY}/${IMG_CLUSTER_AUTOSCALER}:${{ inputs.tag
+        }}" | tee -a $GITHUB_OUTPUT
+
+        '
   vm-kernel:
-    # nb: use format(..) to catch both inputs.skip = true AND inputs.skip = 'true'.
     if: ${{ format('{0}', inputs.skip) != 'true' }}
     uses: ./.github/workflows/vm-kernel.yaml
     with:
@@ -103,383 +103,412 @@ jobs:
       return-image-for-tag: ${{ inputs.kernel-image }}
       archs: ${{ inputs.archs }}
     secrets: inherit
-
   build:
-    # nb: use format(..) to catch both inputs.skip = true AND inputs.skip = 'true'.
     if: ${{ format('{0}', inputs.skip) != 'true' }}
-    needs: [ vm-kernel ]
+    needs:
+    - vm-kernel
     env:
-      # Why localhost? We use a local registry so that when docker/build-push-action tries to pull the
-      # image we built locally, it'll actually have a place to pull from.
-      #
-      # Otherwise, if we just try to use a local image, it fails trying to pull it from dockerhub.
-      # See https://github.com/moby/buildkit/issues/2343 for more information.
-      GO_BASE_IMG: ${{ format('localhost:5000/neondatabase/autoscaling-go-base-{0}:dev', matrix.arch) }}
+      GO_BASE_IMG: ${{ format('localhost:5000/neondatabase/autoscaling-go-base-{0}:dev',
+        matrix.arch) }}
     permissions:
-      contents: read  # This is required for actions/checkout
-      packages: write  # required for pushing to GHCR
+      contents: read
+      packages: write
     strategy:
       matrix:
         arch: ${{ fromJson(inputs.archs) }}
-    runs-on: ${{ fromJson(format('["self-hosted", "{0}"]', matrix.arch == 'arm64' && 'huge-arm64' || 'large')) }}
-
+    runs-on: ubuntu-latest
     services:
       registry:
         image: registry:2
         ports:
-          - 5000:5000
-
+        - 5000:5000
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-        with:
-          egress-policy: audit
+    - name: Harden Runner
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481
+      with:
+        egress-policy: audit
+    - id: tags
+      run: 'echo "controller=${GHCR_REGISTRY}/${IMG_CONTROLLER}-${{ matrix.arch }}:${{
+        inputs.tag }}" | tee -a $GITHUB_OUTPUT
 
-      # job level tags with arch and tag
-      - id: tags
-        run: |
-          echo "controller=${GHCR_REGISTRY}/${IMG_CONTROLLER}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "vxlan-controller=${GHCR_REGISTRY}/${IMG_VXLAN_CONTROLLER}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "runner=${GHCR_REGISTRY}/${IMG_RUNNER}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "scheduler=${GHCR_REGISTRY}/${IMG_SCHEDULER}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "autoscaler-agent=${GHCR_REGISTRY}/${IMG_AUTOSCALER_AGENT}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "daemon=${GHCR_REGISTRY}/${IMG_DAEMON}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
-          echo "cluster-autoscaler=${GHCR_REGISTRY}/${IMG_CLUSTER_AUTOSCALER}-${{ matrix.arch }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
+        echo "vxlan-controller=${GHCR_REGISTRY}/${IMG_VXLAN_CONTROLLER}-${{ matrix.arch
+        }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
 
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        echo "runner=${GHCR_REGISTRY}/${IMG_RUNNER}-${{ matrix.arch }}:${{ inputs.tag
+        }}" | tee -a $GITHUB_OUTPUT
 
-      - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5.4.0
-        with:
-          go-version-file: 'go.mod'
-          # Disable cache on self-hosted runners to avoid /usr/bin/tar errors, see https://github.com/actions/setup-go/issues/403
-          cache: false
-        # Sometimes setup-go gets stuck. Without this, it'll keep going until the job gets killed
-        timeout-minutes: 10
+        echo "scheduler=${GHCR_REGISTRY}/${IMG_SCHEDULER}-${{ matrix.arch }}:${{ inputs.tag
+        }}" | tee -a $GITHUB_OUTPUT
 
-      # Use 'git describe' for embedding git information (duplicated from the Makefile)
-      - name: get git info
-        id: get-git-info
-        run: |
-          # note: --tags enables matching on lightweight (i.e. not annotated) tags, which normally
-          # wouldn't be necessary, except that actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 v4.2.2 does weird things to setup the
-          # repository that means that we actually end up checked out with *just* a lightweight tag
-          # to the tagged commit.
-          echo "info=$(git describe --tags --long --dirty)" >> $GITHUB_OUTPUT
+        echo "autoscaler-agent=${GHCR_REGISTRY}/${IMG_AUTOSCALER_AGENT}-${{ matrix.arch
+        }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
 
-      - name: set custom docker config directory
-        uses: neondatabase/dev-actions/set-docker-config-dir@6094485bf440001c94a94a3f9e221e81ff6b6193
+        echo "daemon=${GHCR_REGISTRY}/${IMG_DAEMON}-${{ matrix.arch }}:${{ inputs.tag
+        }}" | tee -a $GITHUB_OUTPUT
 
-      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
-        with:
-          driver-opts: network=host
+        echo "cluster-autoscaler=${GHCR_REGISTRY}/${IMG_CLUSTER_AUTOSCALER}-${{ matrix.arch
+        }}:${{ inputs.tag }}" | tee -a $GITHUB_OUTPUT
 
-      - name: Login to Dockerhub
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          username: ${{ secrets.NEON_DOCKERHUB_USERNAME }}
-          password: ${{ secrets.NEON_DOCKERHUB_PASSWORD }}
+        '
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+    - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b
+      with:
+        go-version-file: go.mod
+        cache: false
+      timeout-minutes: 10
+    - name: get git info
+      id: get-git-info
+      run: '# note: --tags enables matching on lightweight (i.e. not annotated) tags,
+        which normally
 
-      - name: Login to GHCR
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+        # wouldn''t be necessary, except that actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        v4.2.2 does weird things to setup the
 
-      - name: Login to Docker cache registry
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: cache.neon.build
-          username: ${{ secrets.NEON_CI_DOCKERCACHE_USERNAME }}
-          password: ${{ secrets.NEON_CI_DOCKERCACHE_PASSWORD }}
+        # repository that means that we actually end up checked out with *just* a
+        lightweight tag
 
-      - name: Check dependencies
-        run: |
-          docker version
-          docker buildx version
+        # to the tagged commit.
 
-      - name: Load base image tags and SHAs into env
-        uses: ./.github/actions/deps-versions
-        with:
-          arch: ${{ matrix.arch }}
+        echo "info=$(git describe --tags --long --dirty)" >> $GITHUB_OUTPUT
 
-      - name: Load VM kernel
-        env:
-          IMAGE: ${{ needs.vm-kernel.outputs.image }}
-          ARCH: ${{ matrix.arch }}
-        run: |
-          docker pull --quiet $IMAGE
-          ID=$(docker create $IMAGE true)
-          docker cp ${ID}:/vmlinuz neonvm-kernel/vmlinuz-$ARCH
-          docker rm -f ${ID}
+        '
+    - name: set custom docker config directory
+      uses: neondatabase/dev-actions/set-docker-config-dir@6094485bf440001c94a94a3f9e221e81ff6b6193
+    - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+      with:
+        driver-opts: network=host
+    - name: Login to Dockerhub
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+      with:
+        username: ${{ secrets.NEON_DOCKERHUB_USERNAME }}
+        password: ${{ secrets.NEON_DOCKERHUB_PASSWORD }}
+    - name: Login to GHCR
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Login to Docker cache registry
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+      with:
+        registry: cache.neon.build
+        username: ${{ secrets.NEON_CI_DOCKERCACHE_USERNAME }}
+        password: ${{ secrets.NEON_CI_DOCKERCACHE_PASSWORD }}
+    - name: Check dependencies
+      run: 'docker version
 
-      - name: Get QEMU BIOS for platform
-        env:
-          ARCH: ${{ matrix.arch }}
-          OS: linux
-        run: |
-          neonvm-runner/get-qemu-bios.sh "$ARCH" "$OS"
+        docker buildx version
 
-      - name: Build go dependencies image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        id: build-go-dependencies-image
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: go-base.Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/autoscaling-go-base-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/autoscaling-go-base-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ env.GO_BASE_IMG }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            GOLANG_IMG_TAG=${{ env.GOLANG_IMG_TAG }}
-            GOLANG_IMG_SHA=${{ env.GOLANG_IMG_SHA }}
+        '
+    - name: Load base image tags and SHAs into env
+      uses: ./.github/actions/deps-versions
+      with:
+        arch: ${{ matrix.arch }}
+    - name: Load VM kernel
+      env:
+        IMAGE: ${{ needs.vm-kernel.outputs.image }}
+        ARCH: ${{ matrix.arch }}
+      run: 'docker pull --quiet $IMAGE
 
-      - name: Build and push neonvm-runner image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: neonvm-runner/Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-runner-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-runner-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ steps.tags.outputs.runner }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
-            ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
-            GO_BASE_IMG=${{ env.GO_BASE_IMG }}
-            FIRMWARE_ARCH=${{ matrix.arch }}
-            FIRMWARE_OS=linux
-            TARGET_ARCH=${{ matrix.arch }}
+        ID=$(docker create $IMAGE true)
 
-      - name: Build and push neonvm-controller image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: neonvm-controller/Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-controller-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-controller-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ steps.tags.outputs.controller }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            DISTROLESS_IMG_TAG=${{ env.DISTROLESS_IMG_TAG }}
-            DISTROLESS_IMG_SHA=${{ env.DISTROLESS_IMG_SHA }}
-            GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+        docker cp ${ID}:/vmlinuz neonvm-kernel/vmlinuz-$ARCH
 
-      - name: Build and push neonvm-vxlan-controller image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: neonvm-vxlan-controller/Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-vxlan-controller-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-vxlan-controller-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ steps.tags.outputs.vxlan-controller }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
-            ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
-            GO_BASE_IMG=${{ env.GO_BASE_IMG }}
-            TARGET_ARCH=${{ matrix.arch }}
+        docker rm -f ${ID}
 
-      - name: Build and push autoscale-scheduler image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: autoscale-scheduler/Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/autoscale-scheduler-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/autoscale-scheduler-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ steps.tags.outputs.scheduler }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
-            ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
-            GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+        '
+    - name: Get QEMU BIOS for platform
+      env:
+        ARCH: ${{ matrix.arch }}
+        OS: linux
+      run: 'neonvm-runner/get-qemu-bios.sh "$ARCH" "$OS"
 
-      - name: Build and push autoscaler-agent image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: autoscaler-agent/Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/autoscaler-agent-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/autoscaler-agent-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ steps.tags.outputs.autoscaler-agent }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
-            ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
-            GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+        '
+    - name: Build go dependencies image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      id: build-go-dependencies-image
+      with:
+        attests: 'type=provenance,mode=max
 
-      - name: Build and push neonvm-daemon image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: .
-          push: true
-          file: neonvm-daemon/Dockerfile
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-daemon-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-daemon-{0}:cache,mode=max', matrix.arch) || '' }}
-          tags: ${{ steps.tags.outputs.daemon }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
 
-      - name: Build and push cluster-autoscaler image
-        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
-        with:
-          attests: |
-            type=provenance,mode=max
-            type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
-          context: cluster-autoscaler
-          push: true
-          tags: ${{ steps.tags.outputs.cluster-autoscaler }}
-          cache-from: ${{ format('type=registry,ref=cache.neon.build/cluster-autoscaler-neonvm-{0}:cache', matrix.arch) }}
-          cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/cluster-autoscaler-neonvm-{0}:cache,mode=max', matrix.arch) || '' }}
-          platform: linux/${{ matrix.arch }}
-          build-args: |
-            DISTROLESS_IMG_TAG=${{ env.DISTROLESS_IMG_TAG }}
-            DISTROLESS_IMG_SHA=${{ env.DISTROLESS_IMG_SHA }}
+          '
+        context: .
+        push: true
+        file: go-base.Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/autoscaling-go-base-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/autoscaling-go-base-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ env.GO_BASE_IMG }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'GOLANG_IMG_TAG=${{ env.GOLANG_IMG_TAG }}
 
+          GOLANG_IMG_SHA=${{ env.GOLANG_IMG_SHA }}
+
+          '
+    - name: Build and push neonvm-runner image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: .
+        push: true
+        file: neonvm-runner/Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-runner-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-runner-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ steps.tags.outputs.runner }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
+
+          ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
+
+          GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+
+          FIRMWARE_ARCH=${{ matrix.arch }}
+
+          FIRMWARE_OS=linux
+
+          TARGET_ARCH=${{ matrix.arch }}
+
+          '
+    - name: Build and push neonvm-controller image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: .
+        push: true
+        file: neonvm-controller/Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-controller-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-controller-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ steps.tags.outputs.controller }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'DISTROLESS_IMG_TAG=${{ env.DISTROLESS_IMG_TAG }}
+
+          DISTROLESS_IMG_SHA=${{ env.DISTROLESS_IMG_SHA }}
+
+          GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+
+          '
+    - name: Build and push neonvm-vxlan-controller image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: .
+        push: true
+        file: neonvm-vxlan-controller/Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-vxlan-controller-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-vxlan-controller-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ steps.tags.outputs.vxlan-controller }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
+
+          ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
+
+          GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+
+          TARGET_ARCH=${{ matrix.arch }}
+
+          '
+    - name: Build and push autoscale-scheduler image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: .
+        push: true
+        file: autoscale-scheduler/Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/autoscale-scheduler-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/autoscale-scheduler-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ steps.tags.outputs.scheduler }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
+
+          ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
+
+          GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+
+          '
+    - name: Build and push autoscaler-agent image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: .
+        push: true
+        file: autoscaler-agent/Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/autoscaler-agent-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/autoscaler-agent-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ steps.tags.outputs.autoscaler-agent }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'ALPINE_IMG_TAG=${{ env.ALPINE_IMG_TAG }}
+
+          ALPINE_IMG_SHA=${{ env.ALPINE_IMG_SHA }}
+
+          GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+
+          '
+    - name: Build and push neonvm-daemon image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: .
+        push: true
+        file: neonvm-daemon/Dockerfile
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/neonvm-daemon-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/neonvm-daemon-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        tags: ${{ steps.tags.outputs.daemon }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'GO_BASE_IMG=${{ env.GO_BASE_IMG }}
+
+          '
+    - name: Build and push cluster-autoscaler image
+      uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4
+      with:
+        attests: 'type=provenance,mode=max
+
+          type=sbom,generator=docker.io/docker/buildkit-syft-scanner:1
+
+          '
+        context: cluster-autoscaler
+        push: true
+        tags: ${{ steps.tags.outputs.cluster-autoscaler }}
+        cache-from: ${{ format('type=registry,ref=cache.neon.build/cluster-autoscaler-neonvm-{0}:cache',
+          matrix.arch) }}
+        cache-to: ${{ github.ref_name == 'main' && format('type=registry,ref=cache.neon.build/cluster-autoscaler-neonvm-{0}:cache,mode=max',
+          matrix.arch) || '' }}
+        platform: linux/${{ matrix.arch }}
+        build-args: 'DISTROLESS_IMG_TAG=${{ env.DISTROLESS_IMG_TAG }}
+
+          DISTROLESS_IMG_SHA=${{ env.DISTROLESS_IMG_SHA }}
+
+          '
   merge-images:
     permissions:
-      packages: write # required for pushing to GHCR
-    needs: [ build ]
+      packages: write
+    needs:
+    - build
     runs-on: ubuntu-22.04
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-        with:
-          egress-policy: audit
-
-      - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
-
-      - name: Login to GHCR
-        uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772 # v3.4.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create multi-arch images
-        env:
-          ARCHS: ${{ join(fromJson(inputs.archs), ' ') }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          images=(
-            "${IMG_CONTROLLER}"
-            "${IMG_VXLAN_CONTROLLER}"
-            "${IMG_RUNNER}"
-            "${IMG_SCHEDULER}"
-            "${IMG_AUTOSCALER_AGENT}"
-            "${IMG_DAEMON}"
-            "${IMG_CLUSTER_AUTOSCALER}"
-          )
-
-          for image in "${images[@]}"; do
-            tags=("-t" "${GHCR_REGISTRY}/${image}:${TAG}")
-            for arch in ${ARCHS}; do
-              tags+=("${GHCR_REGISTRY}/${image}-${arch}:${TAG}")
-            done
-            docker buildx imagetools create "${tags[@]}"
-          done
-
+    - name: Harden Runner
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481
+      with:
+        egress-policy: audit
+    - uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2
+    - name: Login to GHCR
+      uses: docker/login-action@74a5d142397b4f367a81961eba4e8cd7edddf772
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create multi-arch images
+      env:
+        ARCHS: ${{ join(fromJson(inputs.archs), ' ') }}
+        TAG: ${{ inputs.tag }}
+      run: "images=(\n  \"${IMG_CONTROLLER}\"\n  \"${IMG_VXLAN_CONTROLLER}\"\n  \"\
+        ${IMG_RUNNER}\"\n  \"${IMG_SCHEDULER}\"\n  \"${IMG_AUTOSCALER_AGENT}\"\n \
+        \ \"${IMG_DAEMON}\"\n  \"${IMG_CLUSTER_AUTOSCALER}\"\n)\n\nfor image in \"\
+        ${images[@]}\"; do\n  tags=(\"-t\" \"${GHCR_REGISTRY}/${image}:${TAG}\")\n\
+        \  for arch in ${ARCHS}; do\n    tags+=(\"${GHCR_REGISTRY}/${image}-${arch}:${TAG}\"\
+        )\n  done\n  docker buildx imagetools create \"${tags[@]}\"\ndone\n"
   generate-image-maps:
-    needs: [ build ]
+    needs:
+    - build
     runs-on: ubuntu-22.04
     outputs:
       dev: ${{ steps.generate.outputs.dev }}
       prod: ${{ steps.generate.outputs.prod }}
     steps:
-      - name: Harden the runner (Audit all outbound calls)
-        uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
-        with:
-          egress-policy: audit
-
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          sparse-checkout: .github/scripts/generate_image_maps.py
-          sparse-checkout-cone-mode: false
-
-      - name: Generate Image Maps
-        id: generate
-        run: python3 .github/scripts/generate_image_maps.py
-        env:
-          # note: excludes neonvm-daemon because we only need it during CI, to build compute images.
-          COMPONENTS:
-            '["${{ env.IMG_CONTROLLER }}",
-              "${{ env.IMG_VXLAN_CONTROLLER }}",
-              "${{ env.IMG_RUNNER }}",
-              "${{ env.IMG_SCHEDULER }}",
-              "${{ env.IMG_AUTOSCALER_AGENT }}",
-              "${{ env.IMG_CLUSTER_AUTOSCALER }}"]'
-          SOURCE_TAG: "${{ inputs.tag }}"
-          TARGET_TAG: "${{ inputs.tag }}"
-          DEV_ACR: "${{ vars.AZURE_DEV_REGISTRY_NAME }}"
-          PROD_ACR: "${{ vars.AZURE_PROD_REGISTRY_NAME }}"
-          DEV_AWS: "${{ vars.NEON_DEV_AWS_ACCOUNT_ID }}"
-          PROD_AWS: "${{ vars.NEON_PROD_AWS_ACCOUNT_ID }}"
-          AWS_REGION: "${{ vars.AWS_ECR_REGION }}"
-
+    - name: Harden the runner (Audit all outbound calls)
+      uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481
+      with:
+        egress-policy: audit
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      with:
+        sparse-checkout: .github/scripts/generate_image_maps.py
+        sparse-checkout-cone-mode: false
+    - name: Generate Image Maps
+      id: generate
+      run: python3 .github/scripts/generate_image_maps.py
+      env:
+        COMPONENTS: '["${{ env.IMG_CONTROLLER }}", "${{ env.IMG_VXLAN_CONTROLLER }}",
+          "${{ env.IMG_RUNNER }}", "${{ env.IMG_SCHEDULER }}", "${{ env.IMG_AUTOSCALER_AGENT
+          }}", "${{ env.IMG_CLUSTER_AUTOSCALER }}"]'
+        SOURCE_TAG: ${{ inputs.tag }}
+        TARGET_TAG: ${{ inputs.tag }}
+        DEV_ACR: ${{ vars.AZURE_DEV_REGISTRY_NAME }}
+        PROD_ACR: ${{ vars.AZURE_PROD_REGISTRY_NAME }}
+        DEV_AWS: ${{ vars.NEON_DEV_AWS_ACCOUNT_ID }}
+        PROD_AWS: ${{ vars.NEON_PROD_AWS_ACCOUNT_ID }}
+        AWS_REGION: ${{ vars.AWS_ECR_REGION }}
   push-to-dev:
     if: ${{ format('{0}', inputs.upload-to-ecr-acr) == 'true' }}
-    needs: [ merge-images, generate-image-maps ]
-
+    needs:
+    - merge-images
+    - generate-image-maps
     permissions:
-      id-token: write  # Required for aws/azure login
-      packages: write  # required for pushing to GHCR
-
+      id-token: write
+      packages: write
     uses: ./.github/workflows/_push-to-container-registry.yml
     secrets: inherit
     with:
-      image-map: "${{ needs.generate-image-maps.outputs.dev }}"
-      aws-region: "${{ vars.AWS_ECR_REGION }}"
-      aws-account-id: "${{ vars.NEON_DEV_AWS_ACCOUNT_ID }}"
-      aws-role-to-assume: "gha-oidc-ecr-rw"
-      azure-client-id: "${{ vars.AZURE_DEV_CLIENT_ID }}"
-      azure-subscription-id: "${{ vars.AZURE_DEV_SUBSCRIPTION_ID }}"
-      azure-tenant-id: "${{ vars.AZURE_TENANT_ID }}"
-      acr-registry-name: "${{ vars.AZURE_DEV_REGISTRY_NAME }}"
-
+      image-map: ${{ needs.generate-image-maps.outputs.dev }}
+      aws-region: ${{ vars.AWS_ECR_REGION }}
+      aws-account-id: ${{ vars.NEON_DEV_AWS_ACCOUNT_ID }}
+      aws-role-to-assume: gha-oidc-ecr-rw
+      azure-client-id: ${{ vars.AZURE_DEV_CLIENT_ID }}
+      azure-subscription-id: ${{ vars.AZURE_DEV_SUBSCRIPTION_ID }}
+      azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+      acr-registry-name: ${{ vars.AZURE_DEV_REGISTRY_NAME }}
   push-to-prod:
     if: ${{ format('{0}', inputs.upload-to-ecr-acr) == 'true' }}
-    needs: [ merge-images, generate-image-maps ]
-
+    needs:
+    - merge-images
+    - generate-image-maps
     permissions:
-      id-token: write  # Required for aws/azure login
-      packages: write  # required for pushing to GHCR
-
+      id-token: write
+      packages: write
     uses: ./.github/workflows/_push-to-container-registry.yml
     secrets: inherit
     with:
-      image-map: "${{ needs.generate-image-maps.outputs.prod }}"
-      aws-region: "${{ vars.AWS_ECR_REGION }}"
-      aws-account-id: "${{ vars.NEON_PROD_AWS_ACCOUNT_ID }}"
-      aws-role-to-assume: "gha-oidc-ecr-rw"
-      azure-client-id: "${{ vars.AZURE_PROD_CLIENT_ID }}"
-      azure-subscription-id: "${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}"
-      azure-tenant-id: "${{ vars.AZURE_TENANT_ID }}"
-      acr-registry-name: "${{ vars.AZURE_PROD_REGISTRY_NAME }}"
+      image-map: ${{ needs.generate-image-maps.outputs.prod }}
+      aws-region: ${{ vars.AWS_ECR_REGION }}
+      aws-account-id: ${{ vars.NEON_PROD_AWS_ACCOUNT_ID }}
+      aws-role-to-assume: gha-oidc-ecr-rw
+      azure-client-id: ${{ vars.AZURE_PROD_CLIENT_ID }}
+      azure-subscription-id: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
+      azure-tenant-id: ${{ vars.AZURE_TENANT_ID }}
+      acr-registry-name: ${{ vars.AZURE_PROD_REGISTRY_NAME }}
